@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CrowdShield Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="logo">Crowd<span>Shield</span></div>
+
+    <div class="nav">
+      <button class="active" onclick="showPage('dashboardSection', this)">📊 Dashboard</button>
+      <button onclick="showPage('liveMonitor', this)">📹 Live Monitor</button>
+      <button onclick="showPage('riskZonesPage', this)">⚠️ Risk Zones</button>
+      <button onclick="showPage('gateManagement', this)">🛂 Access Control</button>
+      <button onclick="showPage('analyticsPage', this)">📈 Analytics</button>
+      <button onclick="showPage('incidentsPage', this)">🚨 Incidents</button>
+      <button onclick="showPage('evacuationRoutes', this)">🗺️ Evacuation Routes</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+  <!-- ================= DASHBOARD ================= -->
+  <section id="dashboardSection" class="page-section dashboard-section">
+
+    <div class="topbar">
+      <div>
+        <h1>Admin Dashboard</h1>
+        <p>Monitor crowd safety and respond to risks.</p>
+      </div>
+
+      <div class="admin">
+        <div class="avatar">A</div>
+        <div>
+          <strong>Admin</strong><br>
+          <small>Operations</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- ONLY THESE 4 CARDS ON DASHBOARD -->
+    <section class="cards">
+      <div class="card">
+        <div class="label">Total Crowd</div>
+        <div class="value" id="crowd">8,420</div>
+      </div>
+
+      <div class="card">
+        <div class="label">High Risk Zones</div>
+        <div class="value danger" id="riskZones">2</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Active Incidents</div>
+        <div class="value warning" id="incidents">4</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Overall Status</div>
+        <div class="value safe" id="status">SAFE</div>
+      </div>
+    </section>
+
+    <!-- LIVE VENUE MAP -->
+    <section class="panel">
+      <h2>Live Venue Map</h2>
+
+      <div class="map" id="venueMap">
+        <div class="zone zone-a" id="zone-1">Loading...</div>
+        <div class="zone zone-b" id="zone-2">Loading...</div>
+        <div class="zone zone-c" id="zone-3">Loading...</div>
+
+        <div class="gate gate-a">Gate A</div>
+        <div class="gate gate-b">Gate B</div>
+        <div class="gate gate-c">Exit C</div>
+      </div>
+
+      <div class="footer-note">
+        Live venue overview — crowd and risk information comes from the backend.
+      </div>
+    </section>
+
+    <!-- AI RECOMMENDATION -->
+    <section class="panel">
+      <h2>AI Recommendation</h2>
+
+      <div id="dashboardAIRecommendation" class="recommendation">
+        <strong>Waiting for crowd analysis</strong>
+        <p>
+          The system will show an AI recommendation here when a significant
+          crowd change is detected.
+        </p>
+      </div>
+
+      <button id="acceptAIRecommendation" class="action">
+        Accept Recommendation
+      </button>
+    </section>
+
+    <!-- LIVE AI ALERTS -->
+    <section class="panel">
+      <h2>Live AI Alerts</h2>
+
+      <div id="aiAlerts">
+        <div class="alert">
+          No new crowd changes detected.
+        </div>
+      </div>
+    </section>
+
+  </section>
+
+
+  <!-- ================= LIVE MONITOR ================= -->
+  <section id="liveMonitor" class="page-section">
+
+    <div class="topbar">
+      <div>
+        <h1>📹 Live Monitor</h1>
+        <p>Monitor crowd information from every connected CCTV camera.</p>
+      </div>
+
+      <span class="live-indicator">● LIVE</span>
+    </div>
+
+    <!-- Cameras are created automatically by script.js -->
+    <div class="camera-grid" id="cameraGrid">
+      Loading cameras...
+    </div>
+
+  </section>
+
+
+  <!-- ================= RISK ZONES ================= -->
+  <section id="riskZonesPage" class="page-section">
+
+    <div class="topbar">
+      <div>
+        <h1>⚠️ Risk Zones</h1>
+        <p>Live crowd risk status across all monitored locations.</p>
+      </div>
+
+      <span class="live-indicator">● LIVE</span>
+    </div>
+
+<section class="panel risk-management">
+
+    <!-- Header -->
+    <div class="risk-page-header">
+
+        <div>
+            <h2>Risk Management</h2>
+
+            <p>
+                Live risk status across all monitored locations
+            </p>
+        </div>
+
+        <div class="risk-live-status">
+            <span class="live-dot"></span>
+            Live Monitoring
+        </div>
+
+    </div>
+
+
+    <!-- HIGH RISK AREAS -->
+
+    <div class="risk-section">
+
+        <div class="risk-section-header">
+
+            <div>
+                <h3>High Risk Areas</h3>
+
+                <p>
+                    Locations currently requiring immediate attention
+                </p>
+            </div>
+
+            <span
+                id="highRiskCount"
+                class="risk-count"
+            >
+                0 High Risk
+            </span>
+
+        </div>
+
+
+        <div id="highRiskAreas">
+
+            <div class="risk-empty">
+                No high-risk areas detected.
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ALL LOCATIONS -->
+
+    <div class="risk-section">
+
+        <div class="risk-section-header">
+
+            <div>
+                <h3>All Locations</h3>
+
+                <p>
+                    Live risk status across the venue
+                </p>
+            </div>
+
+            <span class="camera-count">
+                7 Cameras
+            </span>
+
+        </div>
+
+
+        <div
+            id="riskLocations"
+            class="risk-grid"
+        >
+
+            <div class="risk-empty">
+                Loading camera data...
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+  </section>
+
+
+<!-- ================= ACCESS CONTROL ================= -->
+  <section id="gateManagement" class="page-section">
+
+    <div class="topbar">
+      <div>
+        <h1>🛂 Access Control</h1>
+        <p>Control entry gates, zones, and exits from the live CCTV network.</p>
+      </div>
+
+      <div class="access-live">
+        <span class="live-dot"></span>
+        Synced with CCTV
+      </div>
+    </div>
+
+    <section class="panel access-control-panel">
+
+      <div class="access-summary">
+        <div class="access-summary-card">
+          <span>Entry Gates</span>
+          <strong id="entryControlCount">0</strong>
+        </div>
+
+        <div class="access-summary-card">
+          <span>Zones</span>
+          <strong id="zoneControlCount">0</strong>
+        </div>
+
+        <div class="access-summary-card">
+          <span>Exit Gates</span>
+          <strong id="exitControlCount">0</strong>
+        </div>
+      </div>
+
+      <div id="accessControlList">
+        <div class="access-empty">
+          Scanning connected cameras...
+        </div>
+      </div>
+
+    </section>
+
+    <section class="panel citizen-sync-panel">
+      <div>
+        <h2>Citizen App Sync</h2>
+        <p>
+          Access-status changes are stored on the CrowdShield backend.
+          The citizen app can read the same live status.
+        </p>
+      </div>
+
+      <span class="sync-badge">● LIVE SYNC</span>
+    </section>
+
+  </section>
+
+
+  <!-- ================= ANALYTICS ================= -->
+ <section id="analyticsPage" class="page-section">
+
+    <div class="topbar">
+        <div>
+            <h1>📈 Analytics</h1>
+            <p>Live crowd and safety history from the CCTV network.</p>
+        </div>
+
+        <span class="analytics-live">
+            ● LIVE
+        </span>
+    </div>
+
+    <section class="panel analytics-panel">
+
+        <div class="analytics-header">
+            <div>
+                <h2>Last 30 Minutes</h2>
+                <p>One snapshot every 5 minutes. Maximum 5 results are shown.</p>
+            </div>
+
+            <span class="analytics-window">
+                5 MIN INTERVAL
+            </span>
+        </div>
+
+        <div id="analyticsHistory" class="analytics-history">
+            <div class="analytics-empty">
+                Collecting CCTV data...
+            </div>
+        </div>
+
+    </section>
+
+</section>
+
+  <!-- ================= INCIDENTS ================= -->
+  <section id="incidentsPage" class="page-section">
+
+    <div class="topbar">
+      <div>
+        <h1>🚨 Incidents</h1>
+        <p>View and manage crowd safety incidents.</p>
+      </div>
+    </div>
+
+    <section class="panel">
+      <h2>Incident Management</h2>
+
+      <div id="incidentList">
+        Loading incidents...
+      </div>
+    </section>
+
+  </section>
+
+
+  <!-- ================= EVACUATION ROUTES ================= -->
+  <section id="evacuationRoutes" class="page-section">
+
+    <div class="topbar">
+      <div>
+        <h1>🗺️ Evacuation Routes</h1>
+        <p>View recommended safe movement and evacuation routes.</p>
+      </div>
+    </div>
+
+    <section class="panel">
+      <h2>Recommended Routes</h2>
+
+      <div class="recommendation safe-recommendation">
+        <strong>Route A — Zone C → Exit C</strong>
+        <p>Recommended because Exit C currently has available capacity.</p>
+      </div>
+
+      <div class="recommendation">
+        <strong>⚠️ Avoid Zone B</strong>
+        <p>Zone B currently has high crowd density. Redirect visitors through a safer route.</p>
+      </div>
+    </section>
+
+  </section>
+
+</main>
+
+<script src="./script.js"></script>
+
+</body>
+</html>
