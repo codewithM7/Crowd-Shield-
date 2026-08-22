@@ -12,13 +12,13 @@
     <div class="logo">Crowd<span>Shield</span></div>
 
     <div class="nav">
-      <button class="active" onclick="showPage('dashboardSection', this)">📊 Dashboard</button>
-      <button onclick="showPage('liveMonitor', this)">📹 Live Monitor</button>
-      <button onclick="showPage('riskZonesPage', this)">⚠️ Risk Zones</button>
-      <button onclick="showPage('gateManagement', this)">🛂 Access Control</button>
-      <button onclick="showPage('analyticsPage', this)">📈 Analytics</button>
-      <button onclick="showPage('incidentsPage', this)">🚨 Incidents</button>
-      <button onclick="showPage('evacuationRoutes', this)">🗺️ Evacuation Routes</button>
+      <button class="active" onclick="showPage('dashboardSection', this)"> Dashboard</button>
+      <button onclick="showPage('liveMonitor', this)"> Live Monitor</button>
+      <button onclick="showPage('riskZonesPage', this)"> Risk Zones</button>
+      <button onclick="showPage('gateManagement', this)"> Access Control</button>
+      <button onclick="showPage('analyticsPage', this)">Analytics</button>
+      <button onclick="showPage('incidentsPage', this)"> Incidents</button>
+      <button onclick="showPage('evacuationRoutes', this)"> Evacuation Routes</button>
     </div>
   </aside>
 
@@ -67,22 +67,98 @@
 
     <!-- LIVE VENUE MAP -->
     <section class="panel">
-      <h2>Live Venue Map</h2>
+    <h2>Live Venue Map</h2>
 
-      <div class="map" id="venueMap">
-        <div class="zone zone-a" id="zone-1">Loading...</div>
-        <div class="zone zone-b" id="zone-2">Loading...</div>
-        <div class="zone zone-c" id="zone-3">Loading...</div>
+   <div class="map venue-floor-map" id="venueMap">
 
-        <div class="gate gate-a">Gate A</div>
-        <div class="gate gate-b">Gate B</div>
-        <div class="gate gate-c">Exit C</div>
-      </div>
+    <!-- OUTER VENUE PATH -->
+    <div class="venue-border"></div>
 
-      <div class="footer-note">
-        Live venue overview — crowd and risk information comes from the backend.
-      </div>
-    </section>
+    <!-- GATE 1 -->
+    <div class="map-gate gate-1">
+        <span>G-1</span>
+    </div>
+
+    <!-- GATE 2 -->
+    <div class="map-gate gate-2">
+        <span>G-2</span>
+    </div>
+
+    <!-- EXIT 1 -->
+    <div class="map-gate exit-1">
+        <span>E-1</span>
+    </div>
+
+    <!-- EXIT 2 -->
+    <div class="map-gate exit-2">
+        <span>E-2</span>
+    </div>
+
+
+    <!-- ZONE 1 -->
+    <div
+        class="map-zone zone-a"
+        id="zone-1"
+    >
+        <div class="zone-name">
+            Zone-1
+        </div>
+
+        <div class="zone-status">
+            Loading...
+        </div>
+    </div>
+
+
+    <!-- ZONE 3 -->
+    <div
+        class="map-zone zone-b"
+        id="zone-3"
+    >
+        <div class="zone-name">
+            Zone-3
+        </div>
+
+        <div class="zone-status">
+            Loading...
+        </div>
+    </div>
+
+
+    <!-- ZONE 2 -->
+    <div
+        class="map-zone zone-c"
+        id="zone-2"
+    >
+        <div class="zone-name">
+            Zone-2
+        </div>
+
+        <div class="zone-status">
+            Loading...
+        </div>
+    </div>
+
+
+    <!-- CONNECTIONS -->
+    <div class="map-path path-g1"></div>
+    <div class="map-path path-g2"></div>
+
+    <div class="map-path path-zone1"></div>
+    <div class="map-path path-zone3"></div>
+
+    <div class="map-path path-e1"></div>
+    <div class="map-path path-e2"></div>
+
+</div>
+
+
+    <div class="footer-note">
+        Live venue overview — crowd intensity is represented
+        as a real-time heat map using CCTV data.
+    </div>
+
+</section>
 
     <!-- AI RECOMMENDATION -->
     <section class="panel">
@@ -368,18 +444,19 @@
     </div>
 
     <section class="panel">
-      <h2>Recommended Routes</h2>
+    <h2>Recommended Evacuation Routes</h2>
 
-      <div class="recommendation safe-recommendation">
-        <strong>Route A — Zone C → Exit C</strong>
-        <p>Recommended because Exit C currently has available capacity.</p>
-      </div>
+    <div id="evacuationRouteContent">
 
-      <div class="recommendation">
-        <strong>⚠️ Avoid Zone B</strong>
-        <p>Zone B currently has high crowd density. Redirect visitors through a safer route.</p>
-      </div>
-    </section>
+        <div class="recommendation safe-recommendation">
+            <strong>🟢 No active evacuation required</strong>
+            <p>
+                All monitored areas are currently within safe crowd limits.
+            </p>
+        </div>
+
+    </div>
+</section>
 
   </section>
 

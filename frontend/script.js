@@ -2,6 +2,17 @@ let previousCameraData = {};
 let previousDensityData = {};
 let aiRequestInProgress = false;
 
+// =====================================
+// ACTIVE EVACUATION ROUTES
+// =====================================
+
+const activeEvacuationRoutes =
+    JSON.parse(
+        localStorage.getItem(
+            "activeEvacuationRoutes"
+        ) || "{}"
+    );
+
 // =========================
 // CROWD/RISK CALCULATION HELPERS
 // =========================
@@ -73,14 +84,22 @@ async function loadDashboard() {
             applyDensityRisk({ ...camera })
         );
 
-        // Total people detected by all connected CCTV cameras
+
+        // =========================
+        // TOTAL CROWD
+        // =========================
+
         const totalCrowd = cameras.reduce(
             (sum, camera) =>
                 sum + Number(camera.people || 0),
             0
         );
 
-        // High-risk locations are driven by density/risk
+
+        // =========================
+        // HIGH-RISK LOCATIONS
+        // =========================
+
         const highRiskZones = cameras.filter(camera => {
 
             const risk =
@@ -92,6 +111,7 @@ async function loadDashboard() {
             );
 
         }).length;
+
 
         // =========================
         // ACTIVE INCIDENTS
@@ -140,6 +160,7 @@ async function loadDashboard() {
 
         }
 
+
         // =========================
         // UPDATE DASHBOARD CARDS
         // =========================
@@ -182,8 +203,11 @@ async function loadDashboard() {
 
         if (statusElement) {
 
-            statusElement.textContent =
+            const overall =
                 calculateOverallStatus(cameras);
+
+            statusElement.textContent =
+                overall;
 
             statusElement.classList.remove(
                 "safe",
@@ -192,56 +216,308 @@ async function loadDashboard() {
                 "critical"
             );
 
-            const overall =
-                calculateOverallStatus(cameras);
-
             if (overall === "SAFE") {
-                statusElement.classList.add("safe");
+
+                statusElement.classList.add(
+                    "safe"
+                );
+
             } else if (overall === "CAUTION") {
-                statusElement.classList.add("caution");
+
+                statusElement.classList.add(
+                    "caution"
+                );
+
             } else if (overall === "HIGH RISK") {
-                statusElement.classList.add("high");
+
+                statusElement.classList.add(
+                    "high"
+                );
+
             } else {
-                statusElement.classList.add("critical");
+
+                statusElement.classList.add(
+                    "critical"
+                );
+
             }
 
         }
 
 
         // =========================
-        // ZONE DATA / MAP
+        // LIVE VENUE MAP
         // =========================
 
-        const zonesResponse = await fetch(
-            "http://localhost:5000/api/zones"
-        );
+        // Use the SAME live CCTV data already loaded above.
+        // Do not use /api/zones here because the map must follow
+        // the live camera values from /api/cameras.
 
-        const zones = await zonesResponse.json();
+        const zoneCameras = cameras
+            .filter(camera =>
+                String(camera.type || "").toUpperCase() === "ZONE"
+            )
+            .sort((a, b) => Number(a.id) - Number(b.id));
 
 
-        zones.forEach((zone) => {
+        // =====================================
+        // UPDATE ZONE HEAT MAP
+        // =====================================
+
+        zoneCameras.forEach((camera, index) => {
+
+            // Camera 3 -> Zone 1
+            // Camera 4 -> Zone 2
+            // Camera 5 -> Zone 3
+            const zoneNumber = index + 1;
 
             const zoneElement =
-                document.getElementById(`zone-${zone.id}`);
+                document.getElementById(`zone-${zoneNumber}`);
 
             if (!zoneElement) return;
 
-            zoneElement.innerHTML =
-                `${zone.name}<br>${zone.risk}`;
 
+            const people =
+                Number(camera.people) || 0;
+
+            const density =
+                String(camera.density || "LOW").toUpperCase();
+
+            const risk =
+                String(camera.risk || "LOW").toUpperCase();
+
+
+            // Create the text elements if the HTML map only contains
+            // the zone div itself.
+            let nameElement =
+                zoneElement.querySelector(".zone-name");
+
+            let statusElement =
+                zoneElement.querySelector(".zone-status");
+
+            if (!nameElement || !statusElement) {
+
+                zoneElement.innerHTML = `
+                    <span class="zone-name"></span>
+                    <span class="zone-status"></span>
+                `;
+
+                nameElement =
+                    zoneElement.querySelector(".zone-name");
+
+                statusElement =
+                    zoneElement.querySelector(".zone-status");
+            }
+
+
+            if (nameElement) {
+                nameElement.textContent =
+                    camera.name || `Zone ${zoneNumber}`;
+            }
+
+
+            // Use people count for the visual heat level.
+            // 0-10 = LOW
+            // 11-12 = MEDIUM
+            // 13-14 = BOTTLENECK APPROACHING
+            // 15+ = HIGH
+            let heatClass = "low";
+            let statusText = "LOW";
+
+            if (
+                risk === "CRITICAL" ||
+                density === "CRITICAL"
+            ) {
+                heatClass = "critical";
+                statusText = "CRITICAL";
+
+            } else if (
+                people >= 15 ||
+                risk === "HIGH" ||
+                density === "HIGH"
+            ) {
+                heatClass = "high";
+                statusText = "HIGH";
+
+            } else if (people >= 13) {
+                heatClass = "medium";
+                statusText = "BOTTLENECK APPROACHING";
+
+            } else if (people >= 11) {
+                heatClass = "medium";
+                statusText = "MEDIUM";
+            }
+
+
+            if (statusElement) {
+                statusElement.textContent =
+                    `${statusText} • ${people.toLocaleString()} PEOPLE`;
+            }
+
+
+            // Remove previous heat state.
             zoneElement.classList.remove(
+                "low",
+                "medium",
+                "high",
+                "critical",
+                "bottleneck"
+            );
+
+
+            // Apply current heat state.
+            zoneElement.classList.add(heatClass);
+
+
+            // Separate bottleneck visual for 13-14 people.
+            if (people >= 13 && people < 15) {
+                zoneElement.classList.add("bottleneck");
+            }
+
+        });
+
+
+        // =====================================
+        // UPDATE LIVE GATES / EXITS
+        // =====================================
+
+        const mapGateLocations = [
+            {
+                cameraId: 1,
+                selectors: [
+                    ".map-gate.gate-1",
+                    ".map-gate.gate-a",
+                    ".gate.gate-1",
+                    ".gate.gate-a"
+                ]
+            },
+            {
+                cameraId: 2,
+                selectors: [
+                    ".map-gate.gate-2",
+                    ".map-gate.gate-b",
+                    ".gate.gate-2",
+                    ".gate.gate-b"
+                ]
+            },
+            {
+                cameraId: 6,
+                selectors: [
+                    ".map-gate.exit-1",
+                    ".map-gate.gate-c",
+                    ".gate.exit-1",
+                    ".gate.gate-c"
+                ]
+            },
+            {
+                cameraId: 7,
+                selectors: [
+                    ".map-gate.exit-2",
+                    ".map-gate.gate-d",
+                    ".gate.exit-2",
+                    ".gate.gate-d"
+                ]
+            }
+        ];
+
+
+        mapGateLocations.forEach(location => {
+
+            const camera = cameras.find(item =>
+                Number(item.id) === location.cameraId
+            );
+
+            if (!camera) return;
+
+
+            let element = null;
+
+            for (const selector of location.selectors) {
+                element = document.querySelector(selector);
+                if (element) break;
+            }
+
+            if (!element) return;
+
+
+            const people =
+                Number(camera.people) || 0;
+
+            const density =
+                String(camera.density || "LOW").toUpperCase();
+
+            const risk =
+                String(camera.risk || "LOW").toUpperCase();
+
+
+            // Create a consistent live label inside the gate/exit.
+            let nameElement =
+                element.querySelector(".map-gate-name");
+
+            let statusElement =
+                element.querySelector(".map-gate-status");
+
+            if (!nameElement || !statusElement) {
+
+                element.innerHTML = `
+                    <span class="map-gate-name"></span>
+                    <span class="map-gate-status"></span>
+                `;
+
+                nameElement =
+                    element.querySelector(".map-gate-name");
+
+                statusElement =
+                    element.querySelector(".map-gate-status");
+            }
+
+
+            if (nameElement) {
+                nameElement.textContent =
+                    camera.name || "Gate";
+            }
+
+
+            let statusClass = "low";
+            let statusText = "LOW";
+
+            if (
+                risk === "CRITICAL" ||
+                density === "CRITICAL"
+            ) {
+                statusClass = "critical";
+                statusText = "CRITICAL";
+
+            } else if (
+                people >= 15 ||
+                risk === "HIGH" ||
+                density === "HIGH"
+            ) {
+                statusClass = "high";
+                statusText = "HIGH";
+
+            } else if (people >= 11) {
+                statusClass = "medium";
+                statusText = "MEDIUM";
+            }
+
+
+            if (statusElement) {
+                statusElement.textContent =
+                    `${statusText} • ${people.toLocaleString()} PEOPLE`;
+            }
+
+
+            element.classList.remove(
                 "low",
                 "medium",
                 "high",
                 "critical"
             );
 
-            zoneElement.classList.add(
-                String(zone.risk || "LOW").toLowerCase()
-            );
+            element.classList.add(statusClass);
 
         });
-
 
     } catch (error) {
 
@@ -251,6 +527,7 @@ async function loadDashboard() {
         );
 
     }
+
 }
 
 // =========================
@@ -2108,6 +2385,28 @@ if (
 previousCameraData[camera.id] =
     currentPeople;
 
+
+// =====================================
+// CLEAR EVACUATION ROUTE WHEN LOW
+// =====================================
+
+if (currentPeople <= 10) {
+
+    if (
+        activeEvacuationRoutes[camera.id]
+    ) {
+
+        delete activeEvacuationRoutes[
+            camera.id
+        ];
+
+        renderActiveEvacuationRoutes();
+
+    }
+
+}
+
+
         }
 
     } catch (error) {
@@ -2451,20 +2750,31 @@ payload.alertInstruction =
     );
 
 
-    if (
-        data.success &&
-        data.recommendation
-    ) {
+  if (
+    data.success &&
+    data.recommendation
+) {
 
-        showDashboardAIAlert(
-            changedCamera,
-            previousPeople,
-            increase,
-            data.recommendation,
-             alertLevel
-        );
+    showDashboardAIAlert(
+        changedCamera,
+        previousPeople,
+        increase,
+        data.recommendation,
+        alertLevel
+    );
 
-    }
+
+    // =====================================
+    // UPDATE EVACUATION ROUTE
+    // =====================================
+
+    updateEvacuationRoute(
+        changedCamera,
+        data.recommendation,
+        alertLevel
+    );
+
+}
 
 
 } catch (error) {
@@ -2625,6 +2935,254 @@ function showDashboardAIAlert(
 
 }
 
+function updateEvacuationRoute(
+    camera,
+    recommendation,
+    alertLevel
+) {
+
+    const container =
+       document.getElementById(
+    "evacuationRouteContent"
+);
+
+    if (!container) {
+        return;
+    }
+
+
+    const cameraId =
+        camera.id;
+
+
+    // =====================================
+    // CLEAR ROUTE ONLY WHEN AREA IS LOW
+    // =====================================
+
+    const currentPeople =
+        Number(camera.people) || 0;
+
+
+    if (currentPeople <= 10) {
+
+      delete activeEvacuationRoutes[
+    camera.id
+];
+
+localStorage.setItem(
+    "activeEvacuationRoutes",
+    JSON.stringify(
+        activeEvacuationRoutes
+    )
+);
+
+renderActiveEvacuationRoutes();
+
+        return;
+    }
+
+
+    // =====================================
+    // SAVE / UPDATE ACTIVE ROUTE
+    // =====================================
+
+    activeEvacuationRoutes[cameraId] = {
+
+        camera: camera,
+
+        recommendation:
+            recommendation,
+
+        alertLevel:
+            alertLevel
+
+    };
+
+    localStorage.setItem(
+    "activeEvacuationRoutes",
+    JSON.stringify(
+        activeEvacuationRoutes
+    )
+);
+
+
+    // =====================================
+    // DISPLAY ALL ACTIVE ROUTES
+    // =====================================
+
+    renderActiveEvacuationRoutes();
+}
+
+function renderActiveEvacuationRoutes() {
+
+    const container =
+        document.getElementById(
+            "evacuationRouteContent"
+        );
+
+    if (!container) {
+        return;
+    }
+
+
+    const routes =
+        Object.values(
+            activeEvacuationRoutes
+        );
+
+
+    // =====================================
+    // NO ACTIVE EVACUATION
+    // =====================================
+
+    if (routes.length === 0) {
+
+        container.innerHTML = `
+
+            <div class="recommendation safe-recommendation">
+
+                <strong>
+                    🟢 No active evacuation required
+                </strong>
+
+                <p>
+                    All monitored areas are currently
+                    within safe crowd limits.
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+
+    // =====================================
+    // DISPLAY ACTIVE ROUTES
+    // =====================================
+
+    container.innerHTML =
+        routes.map(routeData => {
+
+            const camera =
+                routeData.camera;
+
+            const recommendation =
+                routeData.recommendation;
+
+            const alertLevel =
+                routeData.alertLevel;
+
+
+            const isApproaching =
+                alertLevel === "APPROACHING";
+
+
+            const title =
+                isApproaching
+                    ? `⚠️ Bottleneck Approaching — ${camera.name}`
+                    : `🔴 Bottleneck Detected — ${camera.name}`;
+
+
+            const description =
+                isApproaching
+                    ? `Crowd density at ${camera.name} is approaching the bottleneck threshold.`
+                    : `${camera.name} has reached high crowd density. Immediate redirection is recommended.`;
+
+
+            const route =
+                recommendation?.recommendedRoute
+                || "No safe route available";
+
+
+            const recommendedExit =
+                recommendation?.recommendedGate
+                || "No safe exit available";
+
+
+            const action =
+                recommendation?.action
+                || (
+                    isApproaching
+                        ? "AVOID_ENTRY"
+                        : "REDIRECT"
+                );
+
+
+            const reason =
+                isApproaching
+                    ? `Bottleneck is approaching at ${camera.name}. Please avoid entering this area.`
+                    : (
+                        recommendation?.reason
+                        || `High crowd density detected at ${camera.name}. Follow the safest available evacuation route.`
+                    );
+
+
+            return `
+
+                <div class="
+                    recommendation
+                    ${isApproaching
+                        ? "safe-recommendation"
+                        : ""}
+                ">
+
+                    <strong>
+                        ${title}
+                    </strong>
+
+                    <p>
+                        ${description}
+                    </p>
+
+                    <p>
+                        <strong>
+                             Safe Evacuation Route:
+                        </strong>
+                    </p>
+
+                    <div class="evacuation-route">
+
+                        ${route}
+
+                    </div>
+
+                    <p>
+                        <strong>
+                             Recommended Exit:
+                        </strong>
+
+                        ${recommendedExit}
+
+                    </p>
+
+                    <p>
+                        <strong>
+                            ⚡ Action:
+                        </strong>
+
+                        ${action}
+
+                    </p>
+
+                    <p>
+                        <strong>
+                            Reason:
+                        </strong>
+
+                        ${reason}
+
+                    </p>
+
+                </div>
+
+            `;
+
+        }).join("");
+
+}
+
 loadDashboard();
 loadCameras();
 loadAccessControl();
@@ -2641,3 +3199,10 @@ setInterval(() => {
 
 window.showPage = showPage;
 window.changeAccessStatus = changeAccessStatus;
+
+
+// =====================================
+// RESTORE ACTIVE EVACUATION ROUTES
+// =====================================
+
+renderActiveEvacuationRoutes();
