@@ -99,9 +99,6 @@ python main.py
 
 > Update the file names and commands above to match your actual project.
 
-## 📸 Screenshots
-
-_Add screenshots of your dashboard and alerts here._
 
 ## 🔮 Future Improvements
 
@@ -120,6 +117,11 @@ Contributions are welcome. Fork the repo, create a branch, and open a pull reque
 **Dilsad Ali**
 3rd Year CSE Student | Web Developer
 GitHub: [@codewithM7](https://github.com/codewithM7)
+
+**Md Shoaib**
+3rd Year CSE Student | Web Developer
+GitHub: [@shoaib000-dev](https://github.com/shoaib000-dev)
+
 
 ---
 
